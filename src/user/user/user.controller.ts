@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, Req, Param, Res, Header, HttpCode, HttpRedirectResponse, Redirect, Inject, UseFilters, HttpException, ParseIntPipe, Body, UsePipes } from '@nestjs/common';
+import { Controller, Get, Post, Query, Req, Param, Res, Header, HttpCode, HttpRedirectResponse, Redirect, Inject, UseFilters, HttpException, ParseIntPipe, Body, UsePipes, UseInterceptors, UseGuards } from '@nestjs/common';
 import { Request, response, Response } from 'express';
 import { title } from 'process';
 import { UserService } from './user.service';
@@ -10,6 +10,10 @@ import { User } from 'prisma'
 import { ValidationFilter } from 'src/validation/validation.filter';
 import { LoginUserRequest, loginUserRequestValidation } from 'src/model/login.model';
 import { ValidationPipe } from 'src/validation/validation.pipe';
+import { TimeInterceptor } from 'src/time/time.interceptor';
+import { Auth } from 'src/auth/auth.decorator';
+import { RoleGuard } from 'src/role/role.guard';
+import { Roles } from 'src/role/roles.decorator';
 
 @Controller('/api/users')
 export class UserController {
@@ -59,10 +63,20 @@ export class UserController {
     @UsePipes(new ValidationPipe(loginUserRequestValidation))
     @UseFilters(ValidationFilter)
     @Post('/login')
-    login(
-        @Query('name') name: string, @Body() request: LoginUserRequest,
-    ) {
-        return `Hello ${request.username}`
+    @Header('Content-Type', 'application/json')
+    @UseInterceptors(TimeInterceptor)
+    login(@Query('name') name: string, @Body() request: LoginUserRequest) {
+        return {
+            data: `Hello ${request.username}`,
+        };
+    }
+
+    @Get('/current')
+    @Roles(['Admin', 'Operator'])
+    current(@Auth() user: User): Record<string, any> {
+        return {
+            data: `Hello ${user.first_name} ${user.last_name}`,
+        };
     }
 
     @Get("/sample-response")

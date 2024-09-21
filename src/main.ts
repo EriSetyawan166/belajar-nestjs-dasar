@@ -11,13 +11,16 @@ import { ValidationFilter } from './validation/validation.filter';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const logger = app.get(WINSTON_MODULE_NEST_PROVIDER);
-  app.useLogger(logger);
+  // app.useLogger(logger);
   app.use(cookieParser("My Secret Key"));
   app.set('views', __dirname + '/../views');
   app.set('view engine', 'html');
   app.engine('html', mustache());
-  app.useGlobalFilters(new ValidationFilter());
+  app.enableShutdownHooks();
+  // app.useGlobalFilters(new ValidationFilter());
   // app.useGlobalPipes()
+  // app.useGlobalInterceptors()
+  // app.useGlobalGuards()
 
   const configService = app.get(ConfigService);
   await app.listen(configService.get('PORT'));
