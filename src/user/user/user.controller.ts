@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, Req, Param, Res, Header, HttpCode, HttpRedirectResponse, Redirect, Inject, UseFilters, HttpException } from '@nestjs/common';
+import { Controller, Get, Post, Query, Req, Param, Res, Header, HttpCode, HttpRedirectResponse, Redirect, Inject, UseFilters, HttpException, ParseIntPipe, Body, UsePipes } from '@nestjs/common';
 import { Request, response, Response } from 'express';
 import { title } from 'process';
 import { UserService } from './user.service';
@@ -8,6 +8,8 @@ import { UserRepository } from '../user-repository/user-repository';
 import { MemberService } from '../member/member.service';
 import { User } from 'prisma'
 import { ValidationFilter } from 'src/validation/validation.filter';
+import { LoginUserRequest, loginUserRequestValidation } from 'src/model/login.model';
+import { ValidationPipe } from 'src/validation/validation.pipe';
 
 @Controller('/api/users')
 export class UserController {
@@ -54,6 +56,15 @@ export class UserController {
         return this.service.sayHello(name);
     }
 
+    @UsePipes(new ValidationPipe(loginUserRequestValidation))
+    @UseFilters(ValidationFilter)
+    @Post('/login')
+    login(
+        @Query('name') name: string, @Body() request: LoginUserRequest,
+    ) {
+        return `Hello ${request.username}`
+    }
+
     @Get("/sample-response")
     @Header("Content-Type", "application/json")
     @HttpCode(200)
@@ -91,7 +102,8 @@ export class UserController {
     }
 
     @Get('/:id')
-    getById(@Param('id') id: string): string {
+    getById(@Param('id', ParseIntPipe) id: number): string {
+        console.log(id * 10);
         return `GET ${id}`;
     }
 
